@@ -1,4 +1,4 @@
-package com.quietinbox.sms
+package com.hamidmdh.quietinbox.sms
 
 import android.Manifest
 import android.content.pm.PackageManager
@@ -7,10 +7,10 @@ import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.LinearLayoutManager
-import com.quietinbox.sms.data.ContactUtils
-import com.quietinbox.sms.data.SmsRepository
-import com.quietinbox.sms.databinding.ActivityConversationBinding
-import com.quietinbox.sms.util.SmsSender
+import com.hamidmdh.quietinbox.sms.data.ContactUtils
+import com.hamidmdh.quietinbox.sms.data.SmsRepository
+import com.hamidmdh.quietinbox.sms.databinding.ActivityConversationBinding
+import com.hamidmdh.quietinbox.sms.util.SmsSender
 
 class ConversationActivity : AppCompatActivity() {
 

@@ -1,4 +1,4 @@
-package com.quietinbox.sms.service
+package com.hamidmdh.quietinbox.sms.service
 
 import android.app.Service
 import android.content.Intent

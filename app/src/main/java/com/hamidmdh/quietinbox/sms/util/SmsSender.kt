@@ -1,4 +1,4 @@
-package com.quietinbox.sms.util
+package com.hamidmdh.quietinbox.sms.util
 
 import android.app.PendingIntent
 import android.content.Context

@@ -1,11 +1,11 @@
-package com.quietinbox.sms
+package com.hamidmdh.quietinbox.sms
 
 import android.os.Bundle
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
-import com.quietinbox.sms.data.SmsRepository
-import com.quietinbox.sms.databinding.ActivityComposeBinding
-import com.quietinbox.sms.util.SmsSender
+import com.hamidmdh.quietinbox.sms.data.SmsRepository
+import com.hamidmdh.quietinbox.sms.databinding.ActivityComposeBinding
+import com.hamidmdh.quietinbox.sms.util.SmsSender
 
 class ComposeActivity : AppCompatActivity() {
 

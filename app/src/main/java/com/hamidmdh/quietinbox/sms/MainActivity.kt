@@ -1,4 +1,4 @@
-package com.quietinbox.sms
+package com.hamidmdh.quietinbox.sms
 
 import android.Manifest
 import android.app.role.RoleManager
@@ -17,9 +17,9 @@ import androidx.fragment.app.Fragment
 import androidx.fragment.app.FragmentActivity
 import androidx.viewpager2.adapter.FragmentStateAdapter
 import com.google.android.material.tabs.TabLayoutMediator
-import com.quietinbox.sms.data.ContactUtils
-import com.quietinbox.sms.data.Prefs
-import com.quietinbox.sms.databinding.ActivityMainBinding
+import com.hamidmdh.quietinbox.sms.data.ContactUtils
+import com.hamidmdh.quietinbox.sms.data.Prefs
+import com.hamidmdh.quietinbox.sms.databinding.ActivityMainBinding
 
 class MainActivity : AppCompatActivity() {
 

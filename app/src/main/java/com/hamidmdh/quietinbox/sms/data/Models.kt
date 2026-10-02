@@ -1,4 +1,4 @@
-package com.quietinbox.sms.data
+package com.hamidmdh.quietinbox.sms.data
 
 data class Conversation(
     val threadId: Long,

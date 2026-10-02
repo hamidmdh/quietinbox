@@ -1,4 +1,4 @@
-package com.quietinbox.sms.receiver
+package com.hamidmdh.quietinbox.sms.receiver
 
 import android.content.BroadcastReceiver
 import android.content.Context

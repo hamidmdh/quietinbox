@@ -1,4 +1,4 @@
-package com.quietinbox.sms.util
+package com.hamidmdh.quietinbox.sms.util
 
 import android.app.NotificationChannel
 import android.app.NotificationManager
@@ -7,9 +7,9 @@ import android.content.Context
 import android.content.Intent
 import android.os.Build
 import androidx.core.app.NotificationCompat
-import com.quietinbox.sms.ConversationActivity
-import com.quietinbox.sms.R
-import com.quietinbox.sms.data.ContactUtils
+import com.hamidmdh.quietinbox.sms.ConversationActivity
+import com.hamidmdh.quietinbox.sms.R
+import com.hamidmdh.quietinbox.sms.data.ContactUtils
 
 object NotificationHelper {
     const val CH_KNOWN = "sms_known"

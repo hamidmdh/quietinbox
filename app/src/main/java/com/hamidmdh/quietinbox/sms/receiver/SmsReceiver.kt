@@ -1,13 +1,13 @@
-package com.quietinbox.sms.receiver
+package com.hamidmdh.quietinbox.sms.receiver
 
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.provider.Telephony
-import com.quietinbox.sms.data.ContactUtils
-import com.quietinbox.sms.data.Prefs
-import com.quietinbox.sms.data.SmsRepository
-import com.quietinbox.sms.util.NotificationHelper
+import com.hamidmdh.quietinbox.sms.data.ContactUtils
+import com.hamidmdh.quietinbox.sms.data.Prefs
+import com.hamidmdh.quietinbox.sms.data.SmsRepository
+import com.hamidmdh.quietinbox.sms.util.NotificationHelper
 
 /**
  * Receives SMS_DELIVER (only delivered to the default SMS app).

@@ -1,4 +1,4 @@
-package com.quietinbox.sms
+package com.hamidmdh.quietinbox.sms
 
 import android.view.Gravity
 import android.view.LayoutInflater
@@ -7,7 +7,7 @@ import android.view.ViewGroup
 import android.widget.LinearLayout
 import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
-import com.quietinbox.sms.data.Message
+import com.hamidmdh.quietinbox.sms.data.Message
 import java.text.DateFormat
 import java.util.Date
 

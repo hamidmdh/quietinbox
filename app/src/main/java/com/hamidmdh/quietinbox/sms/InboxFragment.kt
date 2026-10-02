@@ -1,4 +1,4 @@
-package com.quietinbox.sms
+package com.hamidmdh.quietinbox.sms
 
 import android.os.Bundle
 import android.view.LayoutInflater
@@ -9,8 +9,8 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import android.content.Intent
 import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
-import com.quietinbox.sms.data.Prefs
-import com.quietinbox.sms.data.SmsRepository
+import com.hamidmdh.quietinbox.sms.data.Prefs
+import com.hamidmdh.quietinbox.sms.data.SmsRepository
 
 class InboxFragment : Fragment() {
 

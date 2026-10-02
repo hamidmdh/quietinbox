@@ -4,11 +4,11 @@ plugins {
 }
 
 android {
-    namespace = "com.quietinbox.sms"
+    namespace = "com.hamidmdh.quietinbox.sms"
     compileSdk = 34
 
     defaultConfig {
-        applicationId = "com.quietinbox.sms"
+        applicationId = "com.hamidmdh.quietinbox.sms"
         minSdk = 26
         targetSdk = 34
         versionCode = 1

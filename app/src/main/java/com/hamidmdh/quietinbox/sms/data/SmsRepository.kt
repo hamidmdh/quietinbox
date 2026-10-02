@@ -1,4 +1,4 @@
-package com.quietinbox.sms.data
+package com.hamidmdh.quietinbox.sms.data
 
 import android.content.Context
 import android.net.Uri
