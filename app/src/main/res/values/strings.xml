@@ -24,4 +24,19 @@
     <string name="no_blocked">No blocked senders</string>
     <string name="block_confirm">Block this sender? Their messages will be hidden and muted.</string>
     <string name="unblock_confirm">Unblock this sender?</string>
+    <string name="delete">Delete</string>
+    <string name="cancel">Cancel</string>
+    <string name="delete_conversation">Delete conversation</string>
+    <string name="delete_conversation_confirm">Delete this entire conversation? This cannot be undone.</string>
+    <string name="delete_message_confirm">Delete this message?</string>
+    <string name="delete_messages_confirm">Delete %1$d messages?</string>
+    <string name="notification_sound">Notification sound</string>
+    <string name="sound_default">Default system sound</string>
+    <string name="sound_system_sound">Choose system sound…</string>
+    <string name="sound_audio_file">Choose audio file…</string>
+    <string name="sound_silent">Silent</string>
+    <string name="sound_use_global">Use global setting</string>
+    <string name="sound_saved">Sound saved</string>
+    <string name="chat_bubbles">Chat bubbles</string>
+    <string name="overlay_needed">Allow “Display over other apps” for bubbles to appear.</string>
 </resources>

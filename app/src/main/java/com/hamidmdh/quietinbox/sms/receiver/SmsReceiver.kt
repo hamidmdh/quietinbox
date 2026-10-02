@@ -7,6 +7,7 @@ import android.provider.Telephony
 import com.hamidmdh.quietinbox.sms.data.ContactUtils
 import com.hamidmdh.quietinbox.sms.data.Prefs
 import com.hamidmdh.quietinbox.sms.data.SmsRepository
+import com.hamidmdh.quietinbox.sms.util.BubbleManager
 import com.hamidmdh.quietinbox.sms.util.NotificationHelper
 
 /**
@@ -31,12 +32,21 @@ class SmsReceiver : BroadcastReceiver() {
         val isSaved = ContactUtils.isSavedNumber(context, address)
         val threadId = SmsRepository.threadIdFor(context, address)
 
+        var notified = false
         if (!isSaved && prefs.filterEnabled) {
             // Filtered to Unknown inbox.
             if (prefs.muteUnknown) return // muted: no notification at all
             NotificationHelper.showSms(context, address, body, threadId, silent = true)
+            notified = true
         } else {
             NotificationHelper.showSms(context, address, body, threadId, silent = false)
+            notified = true
+        }
+
+        if (notified && prefs.bubblesEnabled && BubbleManager.hasPermission(context)) {
+            val info = ContactUtils.getInfo(context, address)
+            val name = if (info.isSaved && !info.name.isNullOrBlank()) info.name!! else address
+            BubbleManager.show(context, threadId, address, name, info.photoUri)
         }
     }
 }

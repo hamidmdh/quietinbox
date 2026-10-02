@@ -38,4 +38,43 @@ class Prefs(context: Context) {
 
     private fun norm(a: String): String =
         if (a.any { it.isLetter() }) a.uppercase() else a.filter { it.isDigit() }
+
+    // ---- Notification sound: null = system default, "NONE" (per-thread) = silent ----
+
+    var globalSound: String?
+        get() = sp.getString("sound_global", null)
+        set(v) = sp.edit().putString("sound_global", v).apply()
+
+    /** Null = follow global setting. */
+    fun threadSound(threadId: Long): String? =
+        if (!sp.contains("sound_t_$threadId")) null
+        else sp.getString("sound_t_$threadId", null)
+
+    fun setThreadSound(threadId: Long, uriOrNoneOrNull: String?) {
+        if (uriOrNoneOrNull == null) sp.edit().remove("sound_t_$threadId").apply()
+        else sp.edit().putString("sound_t_$threadId", uriOrNoneOrNull).apply()
+    }
+
+    // ---- Per-thread notification channel config tracking ----
+
+    fun channelConfig(threadId: Long): String? =
+        sp.getString("ch_cfg_$threadId", null)
+
+    fun setChannelConfig(threadId: Long, key: String) =
+        sp.edit().putString("ch_cfg_$threadId", key).apply()
+
+    fun clearChannelConfig(threadId: Long) =
+        sp.edit().remove("ch_cfg_$threadId").apply()
+
+    fun clearAllChannelConfigs() {
+        val ed = sp.edit()
+        for (k in sp.all.keys) if (k.startsWith("ch_cfg_")) ed.remove(k)
+        ed.apply()
+    }
+
+    // ---- Floating bubbles ----
+
+    var bubblesEnabled: Boolean
+        get() = sp.getBoolean("bubbles_enabled", true)
+        set(v) = sp.edit().putBoolean("bubbles_enabled", v).apply()
 }

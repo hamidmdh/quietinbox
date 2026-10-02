@@ -32,7 +32,7 @@ class BlockedActivity : AppCompatActivity() {
                     putExtra(ConversationActivity.EXTRA_ADDRESS, conv.address)
                 })
             },
-            onLongClick = { conv -> confirmUnblock(conv.displayName, conv.address) }
+            onLongClick = { conv -> confirmUnblock(conv.displayName, conv.address, conv.threadId) }
         )
         binding.recycler.layoutManager = LinearLayoutManager(this)
         binding.recycler.adapter = adapter
@@ -55,15 +55,35 @@ class BlockedActivity : AppCompatActivity() {
         }.start()
     }
 
-    private fun confirmUnblock(name: String, address: String) {
+    private fun confirmUnblock(name: String, address: String, threadId: Long) {
+        val options = arrayOf(
+            getString(R.string.delete_conversation),
+            getString(R.string.unblock)
+        )
         AlertDialog.Builder(this)
             .setTitle(name)
-            .setMessage(getString(R.string.unblock_confirm))
-            .setPositiveButton(getString(R.string.unblock)) { _, _ ->
-                Prefs(this).setBlocked(address, false)
-                load()
+            .setItems(options) { _, which ->
+                when (which) {
+                    0 -> AlertDialog.Builder(this)
+                        .setMessage(getString(R.string.delete_conversation_confirm))
+                        .setPositiveButton(getString(R.string.delete)) { _, _ ->
+                            Thread {
+                                SmsRepository.deleteThread(this, threadId)
+                                runOnUiThread { load() }
+                            }.start()
+                        }
+                        .setNegativeButton(android.R.string.cancel, null)
+                        .show()
+                    1 -> AlertDialog.Builder(this)
+                        .setMessage(getString(R.string.unblock_confirm))
+                        .setPositiveButton(getString(R.string.unblock)) { _, _ ->
+                            Prefs(this).setBlocked(address, false)
+                            load()
+                        }
+                        .setNegativeButton(android.R.string.cancel, null)
+                        .show()
+                }
             }
-            .setNegativeButton(android.R.string.cancel, null)
             .show()
     }
 }

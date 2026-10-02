@@ -21,6 +21,19 @@ Works like the default SMS app, plus:
   auto-named. The thread header always shows the raw sender below the name.
 - **Unread dots + bold titles**, friendly timestamps (time / Yesterday / date).
 - **Dark theme**: Material You day/night theming throughout.
+- **Delivery ticks**: outgoing messages show `…` sending, `✓` sent,
+  `✓✓` delivered (when the carrier returns a delivery report), `!` failed.
+- **Custom notification sounds**: menu → Notification sound picks a
+  system sound or an audio file as the global tone; each conversation
+  has its own sound setting (global / system / file / silent) via the
+  `♪`-style menu in the thread screen.
+- **Delete**: long-press a message to select; tap more to multi-select;
+  trash icon deletes (with confirmation). Long-press a conversation for
+  Delete conversation (confirmed) or Block.
+- **Chat bubbles**: floating avatar bubble over other apps for incoming
+  messages (menu → Chat bubbles; grants “Display over other apps”).
+  Tap opens the thread, X or opening the thread dismisses it, repeat
+  messages stack a count badge per conversation.
 
 ## How the "separate inbox" works
 

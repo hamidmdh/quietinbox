@@ -19,6 +19,14 @@
     <item android:id="@+id/action_blocked"
         android:title="@string/blocked"
         app:showAsAction="never" />
+    <item android:id="@+id/action_sound"
+        android:title="@string/notification_sound"
+        app:showAsAction="never" />
+    <item android:id="@+id/action_bubbles"
+        android:title="@string/chat_bubbles"
+        android:checkable="true"
+        android:checked="true"
+        app:showAsAction="never" />
     <item android:id="@+id/action_default"
         android:title="@string/set_default"
         app:showAsAction="never" />

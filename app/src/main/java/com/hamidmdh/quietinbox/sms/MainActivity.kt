@@ -2,14 +2,19 @@ package com.hamidmdh.quietinbox.sms
 
 import android.Manifest
 import android.app.role.RoleManager
+import android.app.NotificationManager
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.media.RingtoneManager
+import android.net.Uri
 import android.os.Build
 import android.os.Bundle
+import android.provider.Settings
 import android.provider.Telephony
 import android.view.Menu
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.SearchView
 import androidx.core.content.ContextCompat
@@ -20,6 +25,8 @@ import com.google.android.material.tabs.TabLayoutMediator
 import com.hamidmdh.quietinbox.sms.data.ContactUtils
 import com.hamidmdh.quietinbox.sms.data.Prefs
 import com.hamidmdh.quietinbox.sms.databinding.ActivityMainBinding
+import com.hamidmdh.quietinbox.sms.util.BubbleManager
+import com.hamidmdh.quietinbox.sms.util.NotificationHelper
 
 class MainActivity : AppCompatActivity() {
 
@@ -29,6 +36,40 @@ class MainActivity : AppCompatActivity() {
     private val permLauncher = registerForActivityResult(
         ActivityResultContracts.RequestMultiplePermissions()
     ) { refresh() }
+
+    private val ringtonePicker =
+        registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { res ->
+            @Suppress("DEPRECATION")
+            val uri: Uri? = res.data?.getParcelableExtra(RingtoneManager.EXTRA_RINGTONE_PICKED_URI)
+            if (res.resultCode == RESULT_OK && uri != null) {
+                prefs.globalSound = uri.toString()
+                clearAllThreadChannels()
+                Toast.makeText(this, R.string.sound_saved, Toast.LENGTH_SHORT).show()
+            }
+        }
+
+    private val audioFilePicker =
+        registerForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
+            if (uri != null) {
+                try {
+                    contentResolver.takePersistableUriPermission(
+                        uri, Intent.FLAG_GRANT_READ_URI_PERMISSION
+                    )
+                } catch (_: Exception) {}
+                prefs.globalSound = uri.toString()
+                clearAllThreadChannels()
+                Toast.makeText(this, R.string.sound_saved, Toast.LENGTH_SHORT).show()
+            }
+        }
+
+    private val overlayPermLauncher =
+        registerForActivityResult(ActivityResultContracts.StartActivityForResult()) {
+            if (!BubbleManager.hasPermission(this) && prefs.bubblesEnabled) {
+                prefs.bubblesEnabled = false
+                Toast.makeText(this, R.string.overlay_needed, Toast.LENGTH_LONG).show()
+            }
+            invalidateOptionsMenu()
+        }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -56,6 +97,7 @@ class MainActivity : AppCompatActivity() {
     override fun onResume() {
         super.onResume()
         ContactUtils.clearCache()
+        invalidateOptionsMenu()
         refresh()
     }
 
@@ -81,6 +123,7 @@ class MainActivity : AppCompatActivity() {
         menuInflater.inflate(R.menu.main_menu, menu)
         menu.findItem(R.id.action_filter)?.isChecked = prefs.filterEnabled
         menu.findItem(R.id.action_mute)?.isChecked = prefs.muteUnknown
+        menu.findItem(R.id.action_bubbles)?.isChecked = prefs.bubblesEnabled
         val searchItem = menu.findItem(R.id.action_search)
         (searchItem?.actionView as? SearchView)?.apply {
             queryHint = getString(R.string.search)
@@ -112,6 +155,19 @@ class MainActivity : AppCompatActivity() {
                 startActivity(Intent(this, BlockedActivity::class.java))
                 true
             }
+            R.id.action_sound -> {
+                showGlobalSoundDialog()
+                true
+            }
+            R.id.action_bubbles -> {
+                prefs.bubblesEnabled = !prefs.bubblesEnabled
+                item.isChecked = prefs.bubblesEnabled
+                if (prefs.bubblesEnabled && !BubbleManager.hasPermission(this)) {
+                    requestOverlayPermission()
+                }
+                if (!prefs.bubblesEnabled) BubbleManager.dismissAll(this)
+                true
+            }
             R.id.action_default -> {
                 promptDefaultSms()
                 true
@@ -120,8 +176,72 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    private fun promptDefaultSms() {
-        if (Telephony.Sms.getDefaultSmsPackage(this) == packageName) {
+    private fun showGlobalSoundDialog() {
+        val options = arrayOf(
+            getString(R.string.sound_default),
+            getString(R.string.sound_system_sound),
+            getString(R.string.sound_audio_file)
+        )
+        AlertDialog.Builder(this)
+            .setTitle(R.string.notification_sound)
+            .setItems(options) { _, which ->
+                when (which) {
+                    0 -> {
+                        prefs.globalSound = null
+                        clearAllThreadChannels()
+                    }
+                    1 -> openRingtonePicker()
+                    2 -> try {
+                        audioFilePicker.launch(arrayOf("audio/*"))
+                    } catch (e: Exception) {
+                        Toast.makeText(this, "No file picker: ${e.message}", Toast.LENGTH_SHORT).show()
+                    }
+                }
+            }
+            .show()
+    }
+
+    private fun openRingtonePicker() {
+        val intent = Intent(RingtoneManager.ACTION_RINGTONE_PICKER).apply {
+            putExtra(RingtoneManager.EXTRA_RINGTONE_TYPE, RingtoneManager.TYPE_NOTIFICATION)
+            putExtra(RingtoneManager.EXTRA_RINGTONE_TITLE, getString(R.string.notification_sound))
+            putExtra(RingtoneManager.EXTRA_RINGTONE_SHOW_SILENT, true)
+            putExtra(RingtoneManager.EXTRA_RINGTONE_SHOW_DEFAULT, true)
+            putExtra(RingtoneManager.EXTRA_RINGTONE_DEFAULT_URI, Settings.System.DEFAULT_NOTIFICATION_URI)
+        }
+        try {
+            ringtonePicker.launch(intent)
+        } catch (e: Exception) {
+            Toast.makeText(this, "No sound picker: ${e.message}", Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    private fun clearAllThreadChannels() {
+        try {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                val nm = getSystemService(NotificationManager::class.java)
+                nm.notificationChannels
+                    .filter { it.id.startsWith("sms_t_") }
+                    .forEach { nm.deleteNotificationChannel(it.id) }
+            }
+        } catch (_: Exception) {}
+        prefs.clearAllChannelConfigs()
+    }
+
+    private fun requestOverlayPermission() {
+        try {
+            overlayPermLauncher.launch(
+                Intent(
+                    Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
+                    Uri.parse("package:$packageName")
+                )
+            )
+        } catch (e: Exception) {
+            Toast.makeText(this, "Cannot open overlay settings: ${e.message}", Toast.LENGTH_LONG).show()
+        }
+    }
+
+    private fun promptDefaultSms() {        if (Telephony.Sms.getDefaultSmsPackage(this) == packageName) {
             Toast.makeText(this, "Already the default SMS app", Toast.LENGTH_SHORT).show()
             return
         }

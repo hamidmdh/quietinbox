@@ -120,6 +120,29 @@ object SmsRepository {
         } catch (_: Exception) {}
     }
 
+    /** Returns number of rows removed. */
+    fun deleteMessages(context: Context, ids: List<Long>): Int {
+        if (ids.isEmpty()) return 0
+        return try {
+            val marks = ids.joinToString(",") { "?" }
+            context.contentResolver.delete(
+                Telephony.Sms.CONTENT_URI,
+                Telephony.Sms._ID + " IN (" + marks + ")",
+                ids.map { it.toString() }.toTypedArray()
+            )
+        } catch (_: Exception) { 0 }
+    }
+
+    fun deleteThread(context: Context, threadId: Long): Int {
+        return try {
+            context.contentResolver.delete(
+                Telephony.Sms.CONTENT_URI,
+                "thread_id = ?",
+                arrayOf(threadId.toString())
+            )
+        } catch (_: Exception) { 0 }
+    }
+
     fun threadIdFor(context: Context, address: String): Long {
         return try {
             Telephony.Threads.getOrCreateThreadId(context, address)

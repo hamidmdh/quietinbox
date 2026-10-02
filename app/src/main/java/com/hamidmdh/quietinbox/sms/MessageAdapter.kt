@@ -8,11 +8,17 @@ import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.color.MaterialColors
 import com.hamidmdh.quietinbox.sms.data.Message
 import com.hamidmdh.quietinbox.sms.databinding.ItemMessageBinding
+import com.hamidmdh.quietinbox.sms.util.MessageStatusStore
 import java.text.DateFormat
 import java.util.Date
 
-class MessageAdapter(private var items: List<Message>) :
-    RecyclerView.Adapter<MessageAdapter.VH>() {
+class MessageAdapter(
+    private var items: List<Message>,
+    private val statusFor: (Message) -> Int?,
+    private val selected: Set<Long>,
+    private val onClick: (Message) -> Unit,
+    private val onLongClick: (Message) -> Unit
+) : RecyclerView.Adapter<MessageAdapter.VH>() {
 
     class VH(val b: ItemMessageBinding) : RecyclerView.ViewHolder(b.root)
 
@@ -39,7 +45,32 @@ class MessageAdapter(private var items: List<Message>) :
             h.b.tvBody.setTextColor(
                 MaterialColors.getColor(h.b.card, com.google.android.material.R.attr.colorOnPrimary)
             )
-            h.b.tvDate.gravity = Gravity.END
+            h.b.metaRow.gravity = Gravity.END
+            h.b.tvStatus.visibility = View.VISIBLE
+            when (statusFor(m)) {
+                MessageStatusStore.DELIVERED -> {
+                    h.b.tvStatus.text = "✓✓"
+                    h.b.tvStatus.setTextColor(
+                        MaterialColors.getColor(h.b.card, com.google.android.material.R.attr.colorOnPrimary)
+                    )
+                }
+                MessageStatusStore.FAILED -> {
+                    h.b.tvStatus.text = "!"
+                    h.b.tvStatus.setTextColor(0xFFFF8A80.toInt())
+                }
+                MessageStatusStore.SENDING -> {
+                    h.b.tvStatus.text = "…"
+                    h.b.tvStatus.setTextColor(
+                        MaterialColors.getColor(h.b.card, com.google.android.material.R.attr.colorOnPrimary)
+                    )
+                }
+                else -> { // SENT or unknown: in provider = accepted by radio
+                    h.b.tvStatus.text = "✓"
+                    h.b.tvStatus.setTextColor(
+                        MaterialColors.getColor(h.b.card, com.google.android.material.R.attr.colorOnPrimary)
+                    )
+                }
+            }
         } else {
             h.b.spaceStart.visibility = View.GONE
             h.b.spaceEnd.visibility = View.VISIBLE
@@ -49,8 +80,16 @@ class MessageAdapter(private var items: List<Message>) :
             h.b.tvBody.setTextColor(
                 MaterialColors.getColor(h.b.card, com.google.android.material.R.attr.colorOnSurfaceVariant)
             )
-            h.b.tvDate.gravity = Gravity.START
+            h.b.metaRow.gravity = Gravity.START
+            h.b.tvStatus.visibility = View.GONE
         }
+        val isSel = selected.contains(m.id)
+        h.b.card.strokeWidth = if (isSel) 6 else 0
+        h.b.card.strokeColor = MaterialColors.getColor(
+            h.b.card, com.google.android.material.R.attr.colorTertiary
+        )
+        h.itemView.setOnClickListener { onClick(m) }
+        h.itemView.setOnLongClickListener { onLongClick(m); true }
     }
 
     override fun getItemCount() = items.size

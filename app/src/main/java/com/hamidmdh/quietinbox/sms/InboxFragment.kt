@@ -99,12 +99,32 @@ class InboxFragment : Fragment() {
     }
 
     private fun confirmBlock(c: Conversation) {
+        val options = arrayOf(
+            getString(R.string.delete_conversation),
+            getString(R.string.block)
+        )
         AlertDialog.Builder(requireContext())
             .setTitle(c.displayName)
-            .setMessage(getString(R.string.block_confirm))
-            .setPositiveButton(getString(R.string.block)) { _, _ ->
-                Prefs(requireContext()).setBlocked(c.address, true)
-                refresh()
+            .setItems(options) { _, which ->
+                when (which) {
+                    0 -> confirmDeleteConversation(c)
+                    1 -> {
+                        Prefs(requireContext()).setBlocked(c.address, true)
+                        refresh()
+                    }
+                }
+            }
+            .show()
+    }
+
+    private fun confirmDeleteConversation(c: Conversation) {
+        AlertDialog.Builder(requireContext())
+            .setMessage(getString(R.string.delete_conversation_confirm))
+            .setPositiveButton(R.string.delete) { _, _ ->
+                Thread {
+                    SmsRepository.deleteThread(requireContext(), c.threadId)
+                    activity?.runOnUiThread { refresh() }
+                }.start()
             }
             .setNegativeButton(android.R.string.cancel, null)
             .show()
