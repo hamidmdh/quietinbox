@@ -8,6 +8,8 @@
     <string name="no_messages">No messages yet</string>
     <string name="new_message">New message</string>
     <string name="to_hint">To (phone number)</string>
+    <string name="pick_contact">Pick a contact</string>
+    <string name="search">Search messages</string>
     <string name="filter_title">Filter unsaved numbers</string>
     <string name="filter_summary">Move SMS from unsaved numbers to Unknown tab</string>
     <string name="mute_title">Mute Unknown notifications</string>
@@ -16,4 +18,10 @@
     <string name="permissions_needed">SMS + Contacts permissions are needed to show and filter messages.</string>
     <string name="grant">Grant</string>
     <string name="unknown_sender">Unknown</string>
+    <string name="block">Block</string>
+    <string name="unblock">Unblock</string>
+    <string name="blocked">Blocked</string>
+    <string name="no_blocked">No blocked senders</string>
+    <string name="block_confirm">Block this sender? Their messages will be hidden and muted.</string>
+    <string name="unblock_confirm">Unblock this sender?</string>
 </resources>

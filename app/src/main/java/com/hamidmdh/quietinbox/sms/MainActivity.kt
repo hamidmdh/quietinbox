@@ -8,10 +8,10 @@ import android.os.Build
 import android.os.Bundle
 import android.provider.Telephony
 import android.view.Menu
-import android.view.MenuItem
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
+import androidx.appcompat.widget.SearchView
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.FragmentActivity
@@ -46,6 +46,10 @@ class MainActivity : AppCompatActivity() {
             }
         }.attach()
 
+        binding.fabCompose.setOnClickListener {
+            startActivity(Intent(this, ComposeActivity::class.java))
+        }
+
         checkPermissions()
     }
 
@@ -77,10 +81,21 @@ class MainActivity : AppCompatActivity() {
         menuInflater.inflate(R.menu.main_menu, menu)
         menu.findItem(R.id.action_filter)?.isChecked = prefs.filterEnabled
         menu.findItem(R.id.action_mute)?.isChecked = prefs.muteUnknown
+        val searchItem = menu.findItem(R.id.action_search)
+        (searchItem?.actionView as? SearchView)?.apply {
+            queryHint = getString(R.string.search)
+            setOnQueryTextListener(object : SearchView.OnQueryTextListener {
+                override fun onQueryTextSubmit(q: String?) = false
+                override fun onQueryTextChange(q: String?): Boolean {
+                    (binding.pager.adapter as? TabsAdapter)?.setQueryAll(q.orEmpty())
+                    return true
+                }
+            })
+        }
         return true
     }
 
-    override fun onOptionsItemSelected(item: MenuItem): Boolean {
+    override fun onOptionsItemSelected(item: android.view.MenuItem): Boolean {
         return when (item.itemId) {
             R.id.action_filter -> {
                 prefs.filterEnabled = !prefs.filterEnabled
@@ -93,12 +108,12 @@ class MainActivity : AppCompatActivity() {
                 item.isChecked = prefs.muteUnknown
                 true
             }
-            R.id.action_default -> {
-                promptDefaultSms()
+            R.id.action_blocked -> {
+                startActivity(Intent(this, BlockedActivity::class.java))
                 true
             }
-            R.id.action_compose -> {
-                startActivity(Intent(this, ComposeActivity::class.java))
+            R.id.action_default -> {
+                promptDefaultSms()
                 true
             }
             else -> super.onOptionsItemSelected(item)
@@ -136,5 +151,6 @@ class MainActivity : AppCompatActivity() {
             return f
         }
         fun refreshAll() { fragments.values.forEach { it.refresh() } }
+        fun setQueryAll(q: String) { fragments.values.forEach { it.setQuery(q) } }
     }
 }

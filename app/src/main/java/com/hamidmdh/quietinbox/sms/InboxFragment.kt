@@ -1,23 +1,25 @@
 package com.hamidmdh.quietinbox.sms
 
+import android.content.Intent
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import androidx.appcompat.app.AlertDialog
 import androidx.fragment.app.Fragment
 import androidx.recyclerview.widget.LinearLayoutManager
-import android.content.Intent
-import android.widget.TextView
-import androidx.recyclerview.widget.RecyclerView
+import com.hamidmdh.quietinbox.sms.data.Conversation
 import com.hamidmdh.quietinbox.sms.data.Prefs
 import com.hamidmdh.quietinbox.sms.data.SmsRepository
+import com.hamidmdh.quietinbox.sms.databinding.FragmentInboxBinding
 
 class InboxFragment : Fragment() {
 
     private var tab: Int = 2
+    private var query: String = ""
+    private var full: List<Conversation> = emptyList()
     private lateinit var adapter: ConversationAdapter
-    private var recycler: RecyclerView? = null
-    private var empty: TextView? = null
+    private var binding: FragmentInboxBinding? = null
 
     companion object {
         fun newInstance(tab: Int) = InboxFragment().apply {
@@ -32,36 +34,79 @@ class InboxFragment : Fragment() {
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?
-    ): View = inflater.inflate(R.layout.fragment_inbox, container, false)
+    ): View {
+        val b = FragmentInboxBinding.inflate(inflater, container, false)
+        binding = b
+        return b.root
+    }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
-        recycler = view.findViewById(R.id.recycler)
-        empty = view.findViewById(R.id.empty)
-        adapter = ConversationAdapter(emptyList()) { conv ->
-            startActivity(Intent(requireContext(), ConversationActivity::class.java).apply {
-                putExtra(ConversationActivity.EXTRA_THREAD_ID, conv.threadId)
-                putExtra(ConversationActivity.EXTRA_ADDRESS, conv.address)
-            })
-        }
-        recycler?.layoutManager = LinearLayoutManager(requireContext())
-        recycler?.adapter = adapter
+        adapter = ConversationAdapter(
+            emptyList(),
+            onClick = { conv ->
+                startActivity(Intent(requireContext(), ConversationActivity::class.java).apply {
+                    putExtra(ConversationActivity.EXTRA_THREAD_ID, conv.threadId)
+                    putExtra(ConversationActivity.EXTRA_ADDRESS, conv.address)
+                })
+            },
+            onLongClick = { conv -> confirmBlock(conv) }
+        )
+        binding?.recycler?.layoutManager = LinearLayoutManager(requireContext())
+        binding?.recycler?.adapter = adapter
+        applyFilter()
         refresh()
+    }
+
+    override fun onDestroyView() {
+        binding = null
+        super.onDestroyView()
+    }
+
+    fun setQuery(q: String) {
+        query = q
+        applyFilter()
     }
 
     fun refresh() {
         val ctx = context ?: return
         Thread {
             val prefs = Prefs(ctx)
-            val all = SmsRepository.loadConversations(ctx)
-            val filtered = when (tab) {
-                0 -> if (prefs.filterEnabled) all.filter { it.isSavedContact } else all
-                1 -> if (prefs.filterEnabled) all.filter { !it.isSavedContact } else emptyList()
-                else -> all
-            }
-            activity?.runOnUiThread {
-                adapter.submit(filtered)
-                empty?.visibility = if (filtered.isEmpty()) View.VISIBLE else View.GONE
-            }
+            full = SmsRepository.loadConversations(ctx, prefs)
+            activity?.runOnUiThread { applyFilter() }
         }.start()
+    }
+
+    private fun applyFilter() {
+        val ctx = context
+        val prefs = ctx?.let { Prefs(it) }
+        val filterOn = prefs?.filterEnabled ?: true
+        val q = query.trim()
+        val list = full.filter { c ->
+            if (c.blocked) return@filter false
+            val tabOk = when (tab) {
+                0 -> if (filterOn) c.isSavedContact else true
+                1 -> if (filterOn) !c.isSavedContact else false
+                else -> true
+            }
+            if (!tabOk) return@filter false
+            if (q.isEmpty()) return@filter true
+            c.displayName.contains(q, ignoreCase = true) ||
+                c.address.contains(q, ignoreCase = true) ||
+                c.snippet.contains(q, ignoreCase = true)
+        }
+        adapter.submit(list)
+        binding?.empty?.visibility = if (list.isEmpty()) View.VISIBLE else View.GONE
+    }
+
+    private fun confirmBlock(c: Conversation) {
+        AlertDialog.Builder(requireContext())
+            .setTitle(c.displayName)
+            .setMessage(getString(R.string.block_confirm))
+            .setPositiveButton(getString(R.string.block)) { _, _ ->
+                Prefs(requireContext()).setBlocked(c.address, true)
+                refresh()
+            }
+            .setNegativeButton(android.R.string.cancel, null)
+            .show()
     }
 }

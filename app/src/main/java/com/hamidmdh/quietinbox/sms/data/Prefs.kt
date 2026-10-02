@@ -14,10 +14,28 @@ class Prefs(context: Context) {
         get() = sp.getBoolean("mute_unknown", true)
         set(v) = sp.edit().putBoolean("mute_unknown", v).apply()
 
-    companion object {
-        const val FILTER_UNKNOWN = 0
-        const val TAB_KNOWN = 0
-        const val TAB_UNKNOWN = 1
-        const val TAB_ALL = 2
+    fun getBlocked(): Set<String> =
+        sp.getStringSet("blocked", emptySet())?.toSet() ?: emptySet()
+
+    fun isBlocked(address: String?): Boolean {
+        if (address.isNullOrBlank()) return false
+        val set = getBlocked()
+        if (set.contains(address)) return true
+        val d = norm(address)
+        return set.any { norm(it) == d }
     }
+
+    fun setBlocked(address: String, blocked: Boolean) {
+        val s = getBlocked().toMutableSet()
+        if (blocked) {
+            s.add(address)
+        } else {
+            val d = norm(address)
+            s.removeAll { it == address || norm(it) == d }
+        }
+        sp.edit().putStringSet("blocked", s).apply()
+    }
+
+    private fun norm(a: String): String =
+        if (a.any { it.isLetter() }) a.uppercase() else a.filter { it.isDigit() }
 }

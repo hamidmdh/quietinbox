@@ -1,19 +1,25 @@
 <?xml version="1.0" encoding="utf-8"?>
-<menu xmlns:android="http://schemas.android.com/apk/res/android">
+<menu xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+    <item android:id="@+id/action_search"
+        android:title="@string/search"
+        android:icon="@android:drawable/ic_menu_search"
+        app:actionViewClass="androidx.appcompat.widget.SearchView"
+        app:showAsAction="always|collapseActionView" />
     <item android:id="@+id/action_filter"
         android:title="@string/filter_title"
         android:checkable="true"
         android:checked="true"
-        android:showAsAction="never" />
+        app:showAsAction="never" />
     <item android:id="@+id/action_mute"
         android:title="@string/mute_title"
         android:checkable="true"
         android:checked="true"
-        android:showAsAction="never" />
+        app:showAsAction="never" />
+    <item android:id="@+id/action_blocked"
+        android:title="@string/blocked"
+        app:showAsAction="never" />
     <item android:id="@+id/action_default"
         android:title="@string/set_default"
-        android:showAsAction="never" />
-    <item android:id="@+id/action_compose"
-        android:title="@string/new_message"
-        android:showAsAction="ifRoom" />
+        app:showAsAction="never" />
 </menu>

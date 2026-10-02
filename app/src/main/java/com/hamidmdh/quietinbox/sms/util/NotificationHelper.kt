@@ -8,7 +8,6 @@ import android.content.Intent
 import android.os.Build
 import androidx.core.app.NotificationCompat
 import com.hamidmdh.quietinbox.sms.ConversationActivity
-import com.hamidmdh.quietinbox.sms.R
 import com.hamidmdh.quietinbox.sms.data.ContactUtils
 
 object NotificationHelper {

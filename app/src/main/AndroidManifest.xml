@@ -33,6 +33,11 @@
             android:exported="false"
             android:parentActivityName=".MainActivity" />
 
+        <activity
+            android:name=".BlockedActivity"
+            android:exported="false"
+            android:parentActivityName=".MainActivity" />
+
         <!-- Required to be eligible as a default SMS app -->
         <activity
             android:name=".ComposeActivity"

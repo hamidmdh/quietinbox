@@ -11,8 +11,8 @@ import com.hamidmdh.quietinbox.sms.util.NotificationHelper
 
 /**
  * Receives SMS_DELIVER (only delivered to the default SMS app).
- * Classifies the sender: saved contact -> loud notification,
- * unsaved -> silent / mutedUnknown ? no notification : silent notification.
+ * Blocked senders are stored silently. Unsaved senders go to the
+ * Unknown inbox with a muted (or silent) notification.
  */
 class SmsReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {
@@ -23,18 +23,17 @@ class SmsReceiver : BroadcastReceiver() {
         val body = msgs.joinToString("") { it.messageBody.orEmpty() }
 
         val prefs = Prefs(context)
-        val isSaved = ContactUtils.isSavedNumber(context, address)
-        val threadId = SmsRepository.threadIdFor(context, address)
-
         // We are the default SMS app: persist the message so it shows in inboxes.
         SmsRepository.insertInbox(context, address, body)
 
+        if (prefs.isBlocked(address)) return // blocked: stored, never notified
+
+        val isSaved = ContactUtils.isSavedNumber(context, address)
+        val threadId = SmsRepository.threadIdFor(context, address)
+
         if (!isSaved && prefs.filterEnabled) {
             // Filtered to Unknown inbox.
-            if (prefs.muteUnknown) {
-                // Muted: do not notify at all.
-                return
-            }
+            if (prefs.muteUnknown) return // muted: no notification at all
             NotificationHelper.showSms(context, address, body, threadId, silent = true)
         } else {
             NotificationHelper.showSms(context, address, body, threadId, silent = false)

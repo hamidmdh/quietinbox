@@ -1,45 +1,81 @@
 package com.hamidmdh.quietinbox.sms.data
 
+import android.content.ContentValues
 import android.content.Context
-import android.net.Uri
 import android.provider.Telephony
 
 object SmsRepository {
 
-    fun loadConversations(context: Context): List<Conversation> {
-        val list = mutableListOf<Conversation>()
+    private class Agg(
+        var address: String,
+        var body: String,
+        var date: Long,
+        var unread: Int
+    )
+
+    fun loadConversations(context: Context, prefs: Prefs): List<Conversation> {
+        val map = LinkedHashMap<Long, Agg>()
         try {
-            val uri: Uri = Telephony.Sms.CONTENT_URI
-            val projection = arrayOf(
-                Telephony.Sms.THREAD_ID,
-                Telephony.Sms.ADDRESS,
-                Telephony.Sms.BODY,
-                Telephony.Sms.DATE,
-                Telephony.Sms.TYPE
-            )
             context.contentResolver.query(
-                uri, projection, null, null,
-                "${Telephony.Sms.DATE} DESC"
+                Telephony.Sms.CONTENT_URI,
+                arrayOf(
+                    Telephony.Sms.THREAD_ID,
+                    Telephony.Sms.ADDRESS,
+                    Telephony.Sms.BODY,
+                    Telephony.Sms.DATE,
+                    Telephony.Sms.TYPE,
+                    Telephony.Sms.READ
+                ),
+                null, null,
+                Telephony.Sms.DATE + " DESC"
             )?.use { c ->
-                val seen = mutableSetOf<Long>()
                 val iThread = c.getColumnIndexOrThrow(Telephony.Sms.THREAD_ID)
                 val iAddr = c.getColumnIndexOrThrow(Telephony.Sms.ADDRESS)
                 val iBody = c.getColumnIndexOrThrow(Telephony.Sms.BODY)
                 val iDate = c.getColumnIndexOrThrow(Telephony.Sms.DATE)
+                val iType = c.getColumnIndexOrThrow(Telephony.Sms.TYPE)
+                val iRead = c.getColumnIndexOrThrow(Telephony.Sms.READ)
                 while (c.moveToNext()) {
                     val threadId = c.getLong(iThread)
-                    if (!seen.add(threadId)) continue // keep latest msg per thread
-                    val address = c.getString(iAddr).orEmpty()
-                    val body = c.getString(iBody).orEmpty()
-                    val date = c.getLong(iDate)
-                    val saved = ContactUtils.isSavedNumber(context, address)
-                    list.add(Conversation(threadId, address, body, date, saved))
+                    val isUnread = c.getInt(iType) == Telephony.Sms.MESSAGE_TYPE_INBOX &&
+                        c.getInt(iRead) == 0
+                    val existing = map[threadId]
+                    if (existing == null) {
+                        map[threadId] = Agg(
+                            c.getString(iAddr).orEmpty(),
+                            c.getString(iBody).orEmpty(),
+                            c.getLong(iDate),
+                            if (isUnread) 1 else 0
+                        )
+                    } else if (isUnread) {
+                        existing.unread++
+                    }
                 }
             }
         } catch (_: SecurityException) {
         } catch (_: Exception) {
         }
-        return list
+        return map.entries
+            .sortedByDescending { it.value.date }
+            .map { (threadId, a) ->
+                val info = ContactUtils.getInfo(context, a.address)
+                val name = if (info.isSaved && !info.name.isNullOrBlank()) {
+                    info.name!!
+                } else {
+                    a.address.ifBlank { "Unknown" }
+                }
+                Conversation(
+                    threadId = threadId,
+                    address = a.address,
+                    displayName = name,
+                    photoUri = info.photoUri,
+                    snippet = a.body,
+                    date = a.date,
+                    isSavedContact = info.isSaved,
+                    unreadCount = a.unread,
+                    blocked = prefs.isBlocked(a.address)
+                )
+            }
     }
 
     fun loadMessages(context: Context, threadId: Long): List<Message> {
@@ -52,9 +88,9 @@ object SmsRepository {
                     Telephony.Sms.ADDRESS, Telephony.Sms.BODY,
                     Telephony.Sms.DATE, Telephony.Sms.TYPE
                 ),
-                "${Telephony.Sms.THREAD_ID} = ?",
+                Telephony.Sms.THREAD_ID + " = ?",
                 arrayOf(threadId.toString()),
-                "${Telephony.Sms.DATE} ASC"
+                Telephony.Sms.DATE + " ASC"
             )?.use { c ->
                 while (c.moveToNext()) {
                     out.add(
@@ -73,8 +109,18 @@ object SmsRepository {
         return out
     }
 
+    fun markThreadRead(context: Context, threadId: Long) {
+        try {
+            val v = ContentValues().apply { put(Telephony.Sms.READ, 1) }
+            context.contentResolver.update(
+                Telephony.Sms.CONTENT_URI, v,
+                "thread_id = ? AND read = 0",
+                arrayOf(threadId.toString())
+            )
+        } catch (_: Exception) {}
+    }
+
     fun threadIdFor(context: Context, address: String): Long {
-        // Telephony.Threads.getOrCreateThreadId is the canonical way.
         return try {
             Telephony.Threads.getOrCreateThreadId(context, address)
         } catch (_: Exception) { 0L }
@@ -86,7 +132,7 @@ object SmsRepository {
      */
     fun insertInbox(context: Context, address: String, body: String, date: Long = System.currentTimeMillis()) {
         try {
-            val values = android.content.ContentValues().apply {
+            val values = ContentValues().apply {
                 put(Telephony.Sms.ADDRESS, address)
                 put(Telephony.Sms.BODY, body)
                 put(Telephony.Sms.DATE, date)
@@ -107,11 +153,12 @@ object SmsRepository {
             context.contentResolver.query(
                 Telephony.Sms.Sent.CONTENT_URI,
                 arrayOf(Telephony.Sms._ID),
-                "${Telephony.Sms.ADDRESS} = ? AND ${Telephony.Sms.BODY} = ? AND ${Telephony.Sms.DATE} > ?",
+                Telephony.Sms.ADDRESS + " = ? AND " + Telephony.Sms.BODY + " = ? AND " +
+                    Telephony.Sms.DATE + " > ?",
                 arrayOf(address, body, since.toString()),
                 null
             )?.use { c -> if (c.moveToFirst()) return }
-            val values = android.content.ContentValues().apply {
+            val values = ContentValues().apply {
                 put(Telephony.Sms.ADDRESS, address)
                 put(Telephony.Sms.BODY, body)
                 put(Telephony.Sms.DATE, System.currentTimeMillis())

@@ -7,6 +7,20 @@ Works like the default SMS app, plus:
 - **Mute Unknown** toggle = no notification at all for unsaved senders (default ON).
   Turn it OFF to get a silent low-priority notification instead.
 - **Filter toggle** = turn filtering off to show everything in Inbox (like stock app).
+- **Search** messages by name, number or text (toolbar search icon).
+- **Contact avatars**: contact photo when available, otherwise a colored
+  initial — in the list, the thread header and the compose screen.
+- **Compose via contact picker**: tap `+` next to the To field to pick a
+  contact by name instead of typing the number.
+- **Block senders**: long-press any conversation → Block. Blocked senders
+  are hidden from all tabs and never notify. Menu → Blocked to review /
+  unblock. Long-press there to unblock.
+- **Honest sender display**: names are shown ONLY for numbers saved in
+  your contacts (exact number match). Service IDs like `AD-BANK` and
+  short codes are always shown exactly as received — nothing is
+  auto-named. The thread header always shows the raw sender below the name.
+- **Unread dots + bold titles**, friendly timestamps (time / Yesterday / date).
+- **Dark theme**: Material You day/night theming throughout.
 
 ## How the "separate inbox" works
 

@@ -10,6 +10,7 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import com.hamidmdh.quietinbox.sms.data.ContactUtils
 import com.hamidmdh.quietinbox.sms.data.SmsRepository
 import com.hamidmdh.quietinbox.sms.databinding.ActivityConversationBinding
+import com.hamidmdh.quietinbox.sms.util.AvatarHelper
 import com.hamidmdh.quietinbox.sms.util.SmsSender
 
 class ConversationActivity : AppCompatActivity() {
@@ -37,8 +38,18 @@ class ConversationActivity : AppCompatActivity() {
 
         setSupportActionBar(binding.toolbar)
         supportActionBar?.setDisplayHomeAsUpEnabled(true)
-        supportActionBar?.title = ContactUtils.displayName(this, address)
+        supportActionBar?.setDisplayShowTitleEnabled(false)
         binding.toolbar.setNavigationOnClickListener { finish() }
+
+        // Title = contact name (or raw sender ID), subtitle = raw sender always.
+        val name = ContactUtils.displayName(this, address)
+        binding.toolbarTitle.text = name.ifBlank { address }
+        binding.toolbarSubtitle.text = address
+        val info = ContactUtils.getInfo(this, address)
+        AvatarHelper.bind(
+            binding.toolbarAvatarPhoto, binding.toolbarAvatarText,
+            name, address, info.photoUri
+        )
 
         adapter = MessageAdapter(emptyList())
         binding.recycler.layoutManager = LinearLayoutManager(this).apply { stackFromEnd = true }
@@ -46,6 +57,7 @@ class ConversationActivity : AppCompatActivity() {
 
         binding.btnSend.setOnClickListener { sendCurrent() }
         load()
+        Thread { SmsRepository.markThreadRead(this, threadId) }.start()
     }
 
     private fun load() {

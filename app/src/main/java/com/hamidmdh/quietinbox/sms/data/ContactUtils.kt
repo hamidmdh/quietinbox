@@ -1,63 +1,75 @@
 package com.hamidmdh.quietinbox.sms.data
 
 import android.content.Context
-import android.net.Uri
 import android.provider.ContactsContract
 
-object ContactUtils {
-    private val cache = mutableMapOf<String, Boolean>()
+data class ContactInfo(
+    val name: String?,
+    val photoUri: String?,
+    val isSaved: Boolean
+)
 
-    fun isSavedNumber(context: Context, rawAddress: String?): Boolean {
-        if (rawAddress.isNullOrBlank()) return false
-        // Short codes / alphanumeric senders (banks, OTPs) are treated as unknown.
-        val digits = rawAddress.filter { it.isDigit() }
-        if (digits.length < 7) return false
+/**
+ * Looks up ONLY the user's own contacts (exact number match).
+ * Service IDs (letters, e.g. AD-BANK) and short codes are never treated
+ * as contacts: they are shown exactly as received, no name is assigned.
+ */
+object ContactUtils {
+    private val cache = mutableMapOf<String, ContactInfo>()
+
+    fun getInfo(context: Context, rawAddress: String?): ContactInfo {
+        if (rawAddress.isNullOrBlank()) return ContactInfo(null, null, false)
         cache[rawAddress]?.let { return it }
-        val result = queryPhoneLookup(context, rawAddress)
-        // Cache only positives aggressively; negatives cached briefly to avoid repeated queries.
-        cache[rawAddress] = result
+        val info = lookup(context, rawAddress)
+        cache[rawAddress] = info
         if (cache.size > 500) cache.clear()
-        return result
+        return info
     }
 
-    private fun queryPhoneLookup(context: Context, address: String): Boolean {
+    fun isSavedNumber(context: Context, rawAddress: String?) =
+        getInfo(context, rawAddress).isSaved
+
+    /** Saved contact name, otherwise the raw sender exactly as received. */
+    fun displayName(context: Context, address: String?): String {
+        if (address.isNullOrBlank()) return "Unknown"
+        val info = getInfo(context, address)
+        return if (info.isSaved && !info.name.isNullOrBlank()) info.name!! else address
+    }
+
+    private fun lookup(context: Context, address: String): ContactInfo {
+        if (address.any { it.isLetter() }) return ContactInfo(null, null, false)
+        val digits = address.filter { it.isDigit() }
+        if (digits.length < 7) return ContactInfo(null, null, false)
         return try {
-            val uri = Uri.withAppendedPath(
-                ContactsContract.PhoneLookup.CONTENT_FILTER_URI,
-                Uri.encode(address)
-            )
+            val suffix = digits.takeLast(10)
             context.contentResolver.query(
-                uri,
-                arrayOf(ContactsContract.PhoneLookup._ID),
-                null, null, null
-            )?.use { c -> c.moveToFirst() } ?: false
+                ContactsContract.CommonDataKinds.Phone.CONTENT_URI,
+                arrayOf(
+                    ContactsContract.CommonDataKinds.Phone.NUMBER,
+                    ContactsContract.CommonDataKinds.Phone.DISPLAY_NAME,
+                    ContactsContract.CommonDataKinds.Phone.PHOTO_THUMBNAIL_URI
+                ),
+                ContactsContract.CommonDataKinds.Phone.NUMBER + " LIKE ?",
+                arrayOf("%$suffix"),
+                null
+            )?.use { c ->
+                val iNum = c.getColumnIndexOrThrow(ContactsContract.CommonDataKinds.Phone.NUMBER)
+                val iName = c.getColumnIndexOrThrow(ContactsContract.CommonDataKinds.Phone.DISPLAY_NAME)
+                val iPhoto = c.getColumnIndexOrThrow(ContactsContract.CommonDataKinds.Phone.PHOTO_THUMBNAIL_URI)
+                while (c.moveToNext()) {
+                    val numDigits = c.getString(iNum).orEmpty().filter { it.isDigit() }
+                    if (numDigits.takeLast(10) == suffix) {
+                        return ContactInfo(c.getString(iName), c.getString(iPhoto), true)
+                    }
+                }
+                ContactInfo(null, null, false)
+            } ?: ContactInfo(null, null, false)
         } catch (_: SecurityException) {
-            false
+            ContactInfo(null, null, false)
         } catch (_: Exception) {
-            false
+            ContactInfo(null, null, false)
         }
     }
 
     fun clearCache() { cache.clear() }
-
-    fun displayName(context: Context, address: String?): String {
-        if (address.isNullOrBlank()) return "Unknown"
-        try {
-            val uri = Uri.withAppendedPath(
-                ContactsContract.PhoneLookup.CONTENT_FILTER_URI,
-                Uri.encode(address)
-            )
-            context.contentResolver.query(
-                uri,
-                arrayOf(ContactsContract.PhoneLookup.DISPLAY_NAME),
-                null, null, null
-            )?.use { c ->
-                if (c.moveToFirst()) {
-                    val name = c.getString(0)
-                    if (!name.isNullOrBlank()) return name
-                }
-            }
-        } catch (_: Exception) {}
-        return address
-    }
 }
