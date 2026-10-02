@@ -9,8 +9,9 @@ import com.google.android.material.color.MaterialColors
 import com.hamidmdh.quietinbox.sms.data.Message
 import com.hamidmdh.quietinbox.sms.databinding.ItemMessageBinding
 import com.hamidmdh.quietinbox.sms.util.MessageStatusStore
-import java.text.DateFormat
+import java.text.SimpleDateFormat
 import java.util.Date
+import java.util.Locale
 
 class MessageAdapter(
     private var items: List<Message>,
@@ -33,7 +34,7 @@ class MessageAdapter(
         val m = items[position]
         val ctx = h.itemView.context
         h.b.tvBody.text = m.body
-        h.b.tvDate.text = DateFormat.getDateTimeInstance(DateFormat.SHORT, DateFormat.SHORT)
+        h.b.tvDate.text = SimpleDateFormat("dd/MM/yy-HH:mm", Locale.getDefault())
             .format(Date(m.date))
         val outgoing = m.type != 1
         if (outgoing) {
@@ -47,30 +48,14 @@ class MessageAdapter(
             )
             h.b.metaRow.gravity = Gravity.END
             h.b.tvStatus.visibility = View.VISIBLE
-            when (statusFor(m)) {
-                MessageStatusStore.DELIVERED -> {
-                    h.b.tvStatus.text = "✓✓"
-                    h.b.tvStatus.setTextColor(
-                        MaterialColors.getColor(h.b.card, com.google.android.material.R.attr.colorOnPrimary)
-                    )
-                }
-                MessageStatusStore.FAILED -> {
-                    h.b.tvStatus.text = "!"
-                    h.b.tvStatus.setTextColor(0xFFFF8A80.toInt())
-                }
-                MessageStatusStore.SENDING -> {
-                    h.b.tvStatus.text = "…"
-                    h.b.tvStatus.setTextColor(
-                        MaterialColors.getColor(h.b.card, com.google.android.material.R.attr.colorOnPrimary)
-                    )
-                }
-                else -> { // SENT or unknown: in provider = accepted by radio
-                    h.b.tvStatus.text = "✓"
-                    h.b.tvStatus.setTextColor(
-                        MaterialColors.getColor(h.b.card, com.google.android.material.R.attr.colorOnPrimary)
-                    )
-                }
+            h.b.tvStatus.text = when (statusFor(m)) {
+                MessageStatusStore.DELIVERED -> "✓✓"
+                MessageStatusStore.FAILED -> "!"
+                MessageStatusStore.SENDING -> "…"
+                else -> "✓" // SENT or unknown: in provider = accepted by radio
             }
+            // Ticks always match the message date color.
+            h.b.tvStatus.setTextColor(h.b.tvDate.currentTextColor)
         } else {
             h.b.spaceStart.visibility = View.GONE
             h.b.spaceEnd.visibility = View.VISIBLE
