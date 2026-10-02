@@ -18,6 +18,7 @@ import androidx.appcompat.view.ActionMode
 import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.hamidmdh.quietinbox.sms.data.ContactUtils
+import com.hamidmdh.quietinbox.sms.data.ConversationCache
 import com.hamidmdh.quietinbox.sms.data.Message
 import com.hamidmdh.quietinbox.sms.data.Prefs
 import com.hamidmdh.quietinbox.sms.data.SmsRepository
@@ -227,6 +228,7 @@ class ConversationActivity : AppCompatActivity() {
             .setPositiveButton(R.string.delete) { _, _ ->
                 Thread {
                     SmsRepository.deleteMessages(this, selected.toList())
+                    ConversationCache.invalidate()
                     runOnUiThread {
                         actionMode?.finish()
                         load()

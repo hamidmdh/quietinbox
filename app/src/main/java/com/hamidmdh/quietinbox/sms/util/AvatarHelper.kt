@@ -1,6 +1,7 @@
 package com.hamidmdh.quietinbox.sms.util
 
 import android.content.res.ColorStateList
+import android.graphics.BitmapFactory
 import android.net.Uri
 import android.view.View
 import android.widget.ImageView
@@ -54,5 +55,40 @@ object AvatarHelper {
         fallback.visibility = View.VISIBLE
         fallback.text = initial(if (displayName.isBlank()) address else displayName)
         fallback.backgroundTintList = ColorStateList.valueOf(colorFor(address))
+    }
+
+    /**
+     * List-safe variant: paints the initial immediately and decodes the photo
+     * off the UI thread, so fast scrolling never janks on disk I/O.
+     */
+    fun bindAsync(
+        photo: ImageView,
+        fallback: TextView,
+        displayName: String,
+        address: String,
+        photoUri: String?
+    ) {
+        if (photoUri.isNullOrBlank()) {
+            photo.tag = null
+            bind(photo, fallback, displayName, address, null)
+            return
+        }
+        bind(photo, fallback, displayName, address, null)
+        photo.tag = photoUri
+        Thread {
+            try {
+                val bmp = photo.context.applicationContext.contentResolver
+                    .openInputStream(Uri.parse(photoUri))?.use { BitmapFactory.decodeStream(it) }
+                photo.post {
+                    if (photo.tag == photoUri && bmp != null) {
+                        photo.setImageBitmap(bmp)
+                        photo.visibility = View.VISIBLE
+                        fallback.visibility = View.GONE
+                    }
+                }
+            } catch (_: Exception) {
+            } catch (_: OutOfMemoryError) {
+            }
+        }.start()
     }
 }

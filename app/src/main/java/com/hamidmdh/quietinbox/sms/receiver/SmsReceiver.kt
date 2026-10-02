@@ -5,6 +5,7 @@ import android.content.Context
 import android.content.Intent
 import android.provider.Telephony
 import com.hamidmdh.quietinbox.sms.data.ContactUtils
+import com.hamidmdh.quietinbox.sms.data.ConversationCache
 import com.hamidmdh.quietinbox.sms.data.Prefs
 import com.hamidmdh.quietinbox.sms.data.SmsRepository
 import com.hamidmdh.quietinbox.sms.util.BubbleManager
@@ -26,6 +27,7 @@ class SmsReceiver : BroadcastReceiver() {
         val prefs = Prefs(context)
         // We are the default SMS app: persist the message so it shows in inboxes.
         SmsRepository.insertInbox(context, address, body)
+        ConversationCache.invalidate()
 
         if (prefs.isBlocked(address)) return // blocked: stored, never notified
 

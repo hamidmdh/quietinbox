@@ -31,7 +31,7 @@ class ConversationAdapter(
         h.b.tvAddress.text = c.displayName.ifBlank { c.address }
         h.b.tvSnippet.text = c.snippet
         h.b.tvDate.text = TimeUtils.friendly(ctx, c.date)
-        AvatarHelper.bind(h.b.avatarPhoto, h.b.avatarText, c.displayName, c.address, c.photoUri)
+        AvatarHelper.bindAsync(h.b.avatarPhoto, h.b.avatarText, c.displayName, c.address, c.photoUri)
         h.b.unreadDot.visibility = if (c.unreadCount > 0) View.VISIBLE else View.GONE
         h.b.tvAddress.setTypeface(
             null,

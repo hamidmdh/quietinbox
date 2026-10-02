@@ -9,6 +9,7 @@ import androidx.appcompat.app.AlertDialog
 import androidx.fragment.app.Fragment
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.hamidmdh.quietinbox.sms.data.Conversation
+import com.hamidmdh.quietinbox.sms.data.ConversationCache
 import com.hamidmdh.quietinbox.sms.data.Prefs
 import com.hamidmdh.quietinbox.sms.data.SmsRepository
 import com.hamidmdh.quietinbox.sms.databinding.FragmentInboxBinding
@@ -69,11 +70,13 @@ class InboxFragment : Fragment() {
 
     fun refresh() {
         val ctx = context ?: return
-        Thread {
-            val prefs = Prefs(ctx)
-            full = SmsRepository.loadConversations(ctx, prefs)
-            activity?.runOnUiThread { applyFilter() }
-        }.start()
+        // Shared single-flight cache: instant when fresh, one load for all tabs.
+        ConversationCache.loadAsync(ctx) { list ->
+            activity?.runOnUiThread {
+                full = list
+                applyFilter()
+            }
+        }
     }
 
     private fun applyFilter() {
@@ -110,6 +113,7 @@ class InboxFragment : Fragment() {
                     0 -> confirmDeleteConversation(c)
                     1 -> {
                         Prefs(requireContext()).setBlocked(c.address, true)
+                        ConversationCache.invalidate()
                         refresh()
                     }
                 }
@@ -123,6 +127,7 @@ class InboxFragment : Fragment() {
             .setPositiveButton(R.string.delete) { _, _ ->
                 Thread {
                     SmsRepository.deleteThread(requireContext(), c.threadId)
+                    ConversationCache.invalidate()
                     activity?.runOnUiThread { refresh() }
                 }.start()
             }

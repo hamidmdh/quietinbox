@@ -6,6 +6,7 @@ import android.view.View
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.LinearLayoutManager
+import com.hamidmdh.quietinbox.sms.data.ConversationCache
 import com.hamidmdh.quietinbox.sms.data.Prefs
 import com.hamidmdh.quietinbox.sms.data.SmsRepository
 import com.hamidmdh.quietinbox.sms.databinding.ActivityBlockedBinding
@@ -44,15 +45,13 @@ class BlockedActivity : AppCompatActivity() {
     }
 
     private fun load() {
-        Thread {
-            val prefs = Prefs(this)
-            val blocked = SmsRepository.loadConversations(this, prefs)
-                .filter { it.blocked }
+        ConversationCache.loadAsync(this) { list ->
+            val blocked = list.filter { it.blocked }
             runOnUiThread {
                 adapter.submit(blocked)
                 binding.empty.visibility = if (blocked.isEmpty()) View.VISIBLE else View.GONE
             }
-        }.start()
+        }
     }
 
     private fun confirmUnblock(name: String, address: String, threadId: Long) {
@@ -69,6 +68,7 @@ class BlockedActivity : AppCompatActivity() {
                         .setPositiveButton(getString(R.string.delete)) { _, _ ->
                             Thread {
                                 SmsRepository.deleteThread(this, threadId)
+                                ConversationCache.invalidate()
                                 runOnUiThread { load() }
                             }.start()
                         }
@@ -78,6 +78,7 @@ class BlockedActivity : AppCompatActivity() {
                         .setMessage(getString(R.string.unblock_confirm))
                         .setPositiveButton(getString(R.string.unblock)) { _, _ ->
                             Prefs(this).setBlocked(address, false)
+                            ConversationCache.invalidate()
                             load()
                         }
                         .setNegativeButton(android.R.string.cancel, null)
