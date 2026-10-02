@@ -1,0 +1,19 @@
+<resources>
+    <string name="app_name">QuietInbox SMS</string>
+    <string name="inbox">Inbox</string>
+    <string name="unknown">Unknown</string>
+    <string name="all">All</string>
+    <string name="type_message">Type a message</string>
+    <string name="send">Send</string>
+    <string name="no_messages">No messages yet</string>
+    <string name="new_message">New message</string>
+    <string name="to_hint">To (phone number)</string>
+    <string name="filter_title">Filter unsaved numbers</string>
+    <string name="filter_summary">Move SMS from unsaved numbers to Unknown tab</string>
+    <string name="mute_title">Mute Unknown notifications</string>
+    <string name="mute_summary">Silent notifications for unsaved senders</string>
+    <string name="set_default">Set as default</string>
+    <string name="permissions_needed">SMS + Contacts permissions are needed to show and filter messages.</string>
+    <string name="grant">Grant</string>
+    <string name="unknown_sender">Unknown</string>
+</resources>
